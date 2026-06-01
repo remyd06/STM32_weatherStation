@@ -1,5 +1,4 @@
 #include "rcc.h"
-#include "stm32f446xx.h"
 
 void	RCC_Init()
 {
@@ -12,6 +11,8 @@ void	RCC_Init()
 
 	//PERIPHERALS
 	RCC->APB2ENR |= (1 << 12); //SPI1
+	RCC->AHB1ENR |= (1 << 21); //DMA1
+	RCC->APB2ENR |= (1 << 8);  //ADC1
 
 
 }

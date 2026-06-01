@@ -1,4 +1,4 @@
-#include "stm32f446xx.h"
+#include "spi.h"
 
 void	SPI1_Init()
 {
