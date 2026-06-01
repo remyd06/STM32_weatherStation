@@ -22,7 +22,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "rcc.h"
+#include "gpio.h"
+#include "usart.h"
+#include "spi.h"
+#include "bme280.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,11 +101,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+  RCC_Init();
+  GPIO_Init();
+  USART_Init();
+  SPI1_Init();
   /* USER CODE END 2 */
 
   /* Init scheduler */
-  osKernelInitialize();
+//  osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -120,7 +128,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+//  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -131,17 +139,41 @@ int main(void)
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
-  osKernelStart();
+//  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint8_t id;
+  uint8_t data[8];
+  BME280_calib_t calib;
+  BME280_data_t data_struct;
+
+  BME280_GetID(&id);
+  if (id == 0x60)
+	  USART_Transmit(USART2, (uint8_t *)"BME280 detected.\n", 17);
+  BME280_GetTRIM(&calib);
+  BME280_SetMODE(0b11, 0b001, 0b001, 0b001);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  BME280_GetDATA(data);
+	  BME280_ConvertDATA(data, &calib, &data_struct);
+
+//	  char bufT[20];
+//	  int lenT = sprintf(bufT, "T:%ld\r\n", data_struct.temp);
+//	  USART_Transmit(USART2, (uint8_t *)bufT, lenT);
+//
+//	  char bufP[20];
+//	  int lenP = sprintf(bufP, "P:%ld\r\n", data_struct.pres / 256);
+//	  USART_Transmit(USART2, (uint8_t *)bufP, lenP);
+
+	  char bufH[20];
+	  int lenH = sprintf(bufH, "H:%ld\r\n", data_struct.hum / 1024);
+	  USART_Transmit(USART2, (uint8_t *)bufH, lenH);
   }
   /* USER CODE END 3 */
 }
