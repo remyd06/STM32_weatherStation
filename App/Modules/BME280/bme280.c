@@ -43,7 +43,6 @@ void	BME280_SetMODE(uint8_t mode, uint8_t osrs_p, uint8_t osrs_t, uint8_t osrs_h
 	SPI_Receive(SPI1);
 
 	CS_SPI1_BME280_HIGH();
-
 }
 
 void	BME280_GetTRIM(BME280_calib_t *calib)
