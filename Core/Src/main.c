@@ -28,6 +28,8 @@
 #include "usart.h"
 #include "spi.h"
 #include "bme280.h"
+#include "adc.h"
+#include "dma.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -104,7 +106,10 @@ int main(void)
   RCC_Init();
   GPIO_Init();
   USART_Init();
-  SPI1_Init();
+  SPI_Init();
+  ADC_Init();
+  DMA_Init();
+  ADC_Start();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -160,8 +165,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  BME280_GetDATA(data);
-	  BME280_ConvertDATA(data, &calib, &data_struct);
+//	  BME280_GetDATA(data);
+//	  BME280_ConvertDATA(data, &calib, &data_struct);
 
 //	  char bufT[20];
 //	  int lenT = sprintf(bufT, "T:%ld\r\n", data_struct.temp);
@@ -171,9 +176,10 @@ int main(void)
 //	  int lenP = sprintf(bufP, "P:%ld\r\n", data_struct.pres / 256);
 //	  USART_Transmit(USART2, (uint8_t *)bufP, lenP);
 
-	  char bufH[20];
-	  int lenH = sprintf(bufH, "H:%ld\r\n", data_struct.hum / 1024);
-	  USART_Transmit(USART2, (uint8_t *)bufH, lenH);
+//	  char bufH[20];
+//	  int lenH = sprintf(bufH, "H:%ld\r\n", data_struct.hum / 1024);
+//	  USART_Transmit(USART2, (uint8_t *)bufH, lenH);
+
   }
   /* USER CODE END 3 */
 }
