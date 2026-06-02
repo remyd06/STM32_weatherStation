@@ -11,9 +11,8 @@ void	RCC_Init()
 
 	//PERIPHERALS
 	RCC->APB2ENR |= (1 << 12); //SPI1
-	RCC->AHB1ENR |= (1 << 21); //DMA1
+	RCC->AHB1ENR |= (1 << 22); //DMA2
 	RCC->APB2ENR |= (1 << 8);  //ADC1
-
 
 }
 
