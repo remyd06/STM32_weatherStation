@@ -53,6 +53,11 @@ void	GPIO_Init()
 	GPIOA->OSPEEDR |= (2 << 4);
 	GPIOA->PUPDR &= ~(3 << 4);
 	GPIOA->PUPDR |= (1 << 4);
+
+	//PB1
+	GPIOB->MODER &= ~(0x3 << 2);
+	GPIOB->MODER |= (0x3 << 2);
+	GPIOB->PUPDR &= ~(0x3 << 2);
 }
 
 void	CS_SPI1_BME280_LOW()
