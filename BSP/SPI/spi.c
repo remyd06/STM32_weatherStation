@@ -1,7 +1,8 @@
 #include "spi.h"
 
-void	SPI1_Init()
+void	SPI_Init()
 {
+	//SPI1
 	SPI1->CR1 = 0;
 	SPI1->CR1 |= (1 << 2);
 	SPI1->CR1 |= (0b111 << 3);
