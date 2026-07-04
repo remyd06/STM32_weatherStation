@@ -23,13 +23,21 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "rcc.h"
 #include "gpio.h"
 #include "usart.h"
 #include "spi.h"
-#include "bme280.h"
+#include "i2c.h"
 #include "adc.h"
 #include "dma.h"
+#include "iwdg.h"
+#include "bme280.h"
+#include "temt6000.h"
+#include "ssd1306.h"
+#include "fonts.h"
+#include "ssd1306_conf.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,7 +89,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	DBGMCU->CR &= ~DBGMCU_CR_TRACE_IOEN;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -105,11 +113,17 @@ int main(void)
   /* USER CODE BEGIN 2 */
   RCC_Init();
   GPIO_Init();
-  USART_Init();
-  SPI_Init();
-  ADC_Init();
-  DMA_Init();
-  ADC_Start();
+  USART2_Init();
+  SPI1_Init();
+  ADC_Prescaller_Init();
+  ADC1_Init();
+  DMA2_Init();
+  ADC1_Start();
+  I2C1_Init();
+  ssd1306_Init();
+//  IWDG_Init();
+
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -155,30 +169,77 @@ int main(void)
   BME280_calib_t calib;
   BME280_data_t data_struct;
 
+
   BME280_GetID(&id);
-  if (id == 0x60)
-	  USART_Transmit(USART2, (uint8_t *)"BME280 detected.\n", 17);
+//  char buf[32];
+//  int len = sprintf(buf, "ID: 0x%02X\r\n", id);
+//  USART_Transmit(USART2, (uint8_t *)buf, len);
+//  if (id == 0x60)
+//      USART_Transmit(USART2, (uint8_t *)"BME280 detected.\r\n", 18);
+//  else
+//      USART_Transmit(USART2, (uint8_t *)"BME280 NOT detected.\r\n", 22);
   BME280_GetTRIM(&calib);
   BME280_SetMODE(0b11, 0b001, 0b001, 0b001);
+
+  ssd1306_UpdateScreen();
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  BME280_GetDATA(data);
-//	  BME280_ConvertDATA(data, &calib, &data_struct);
-
-//	  char bufT[20];
+	  ssd1306_Fill(Black);
+	  BME280_GetDATA(data);
+	  BME280_ConvertDATA(data, &calib, &data_struct);
+//
+//	  char bufT[16];
 //	  int lenT = sprintf(bufT, "T:%ld\r\n", data_struct.temp);
 //	  USART_Transmit(USART2, (uint8_t *)bufT, lenT);
 //
-//	  char bufP[20];
+//	  char bufP[16];
 //	  int lenP = sprintf(bufP, "P:%ld\r\n", data_struct.pres / 256);
 //	  USART_Transmit(USART2, (uint8_t *)bufP, lenP);
-
-//	  char bufH[20];
+//
+//	  char bufH[16];
 //	  int lenH = sprintf(bufH, "H:%ld\r\n", data_struct.hum / 1024);
 //	  USART_Transmit(USART2, (uint8_t *)bufH, lenH);
+//
+//	  char buf[16];
+//	  snprintf(buf, sizeof(buf), "LUX: %d\r\n", *get_DMA2_S0());
+//	  USART_Transmit(USART2, (uint8_t *)buf, strlen(buf));
+//	  HAL_Delay(500);
+
+	  char buf[32];
+
+	  // ===== TITRE =====
+	  char title[] = "Meteo Station";
+	  uint8_t x_title = (128 - (strlen(title) * 7)) / 2;
+
+	  ssd1306_SetCursor(x_title, 0);
+	  ssd1306_WriteString(title, Font_7x10, White);
+
+	  // ===== TEMP =====
+	  snprintf(buf, sizeof(buf), "T:%ld", data_struct.temp);
+	  ssd1306_SetCursor(0, 17);
+	  ssd1306_WriteString(buf, Font_7x10, White);
+
+	  // ===== PRESSION (droite) =====
+	  snprintf(buf, sizeof(buf), "P:%ld", data_struct.pres / 256);
+	  ssd1306_SetCursor(128 - (strlen(buf) * 7), 17);
+	  ssd1306_WriteString(buf, Font_7x10, White);
+
+	  // ===== HUMIDITE =====
+	  snprintf(buf, sizeof(buf), "H:%ld", data_struct.hum / 1024);
+	  ssd1306_SetCursor(0, 34);
+	  ssd1306_WriteString(buf, Font_7x10, White);
+
+	  // ===== LUMINOSITE =====
+	  snprintf(buf, sizeof(buf), "L:%d", *get_DMA2_S0());
+	  ssd1306_SetCursor(128 - (strlen(buf) * 7), 34);
+	  ssd1306_WriteString(buf, Font_7x10, White);
+
+	  // ===== UPDATE =====
+	  ssd1306_UpdateScreen();
+	  HAL_Delay(500);
 
   }
   /* USER CODE END 3 */
