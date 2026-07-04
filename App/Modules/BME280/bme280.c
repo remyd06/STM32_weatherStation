@@ -2,6 +2,17 @@
 
 BME280_S32_t	t_fine;
 
+void	CS_SPI1_BME280_LOW()
+{
+	GPIOC->BSRR = (0b1 << 20);
+}
+
+void	CS_SPI1_BME280_HIGH()
+{
+	GPIOC->BSRR = (0b1 << 4);
+}
+
+
 void	BME280_GetID(uint8_t *id)
 {
 	uint8_t addr = 0xD0 | 0x80;
@@ -289,6 +300,5 @@ void	BME280_ConvertDATA(uint8_t *data, BME280_calib_t *calib, BME280_data_t *dat
 	data_struct->temp = BME280_compensate_T_int32(tempT, calib);
 	data_struct->pres = BME280_compensate_P_int64(tempP, calib);
 	data_struct->hum = BME280_compensate_H_int32(tempH, calib);
-
 }
 

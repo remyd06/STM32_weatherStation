@@ -4,7 +4,8 @@
 
 # include "stm32f446xx.h"
 
-void	ADC_Init();
-void	ADC_Start();
+void	ADC_Prescaller_Init();
+void	ADC1_Init();
+void	ADC1_Start();
 
 #endif

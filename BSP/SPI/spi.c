@@ -1,6 +1,6 @@
 #include "spi.h"
 
-void	SPI_Init()
+void	SPI1_Init()
 {
 	//SPI1
 	SPI1->CR1 = 0;
@@ -9,6 +9,7 @@ void	SPI_Init()
 	SPI1->CR1 |= (1 << 9);
 	SPI1->CR1 |= (1 << 8);
 	SPI1->CR1 |= (1 << 6);
+
 }
 
 void	SPI_Transmit(SPI_TypeDef *SPIx, uint8_t *data)

@@ -3,7 +3,7 @@
 
 # include "stm32f446xx.h"
 
-void		DMA_Init();
+void		DMA2_Init();
 uint16_t	*get_DMA2_S0();
 
 #endif

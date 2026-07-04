@@ -2,7 +2,7 @@
 
 static uint16_t buf[16];
 
-void	DMA_Init()
+void	DMA2_Init()
 {
 	// DMA2, Stream 0
 	DMA2_Stream0->CR &= ~(1 << 0);

@@ -38,6 +38,8 @@ typedef struct {
     int8_t   dig_H6;
 } BME280_calib_t;
 
+void	CS_SPI1_BME280_LOW();
+void	CS_SPI1_BME280_HIGH();
 void	BME280_GetID(uint8_t *id);
 void	BME280_SetMODE(uint8_t mode, uint8_t osrs_p, uint8_t osrs_t, uint8_t osrs_h);
 void	BME280_GetTRIM(BME280_calib_t *calib);

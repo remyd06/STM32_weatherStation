@@ -1,6 +1,6 @@
 #include "usart.h"
 
-void	USART_Init()
+void	USART2_Init()
 {
 	USART2->BRR = 364;
 	USART2->CR1 = 0;
