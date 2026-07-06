@@ -2,7 +2,6 @@
 
 void	BME280_Task()
 {
-	uint8_t			id;
 	uint8_t			data[8];
 	char			buf[MSG_SIZE];
 
@@ -11,20 +10,6 @@ void	BME280_Task()
 
 	BME280_calib_t	calib;
 	BME280_data_t	data_struct;
-
-	BME280_GetID(&id);
-	snprintf(buf, sizeof(buf), "!LOGS!ID: 0x%02X\r\n", id);
-//	xQueueSend(xQueueUart, buf, portMAX_DELAY);
-//	if (id == 0x60)
-//	{
-//		snprintf(buf, sizeof(buf), "!LOGS!BME280 detected.\r\n");
-//		xQueueSend(xQueueUart, buf, portMAX_DELAY);
-//	}
-//	else
-//	{
-//		snprintf(buf, sizeof(buf), "!LOGS!BME280 NOT detected.\r\n");
-//		xQueueSend(xQueueUart, buf, portMAX_DELAY);
-//	}
 
 	BME280_GetTRIM(&calib);
 	BME280_SetMODE(0b11, 0b001, 0b001, 0b001);
@@ -37,18 +22,18 @@ void	BME280_Task()
 		int_part = data_struct.temp / 100;
 		dec_part = data_struct.temp % 100;
 		snprintf(buf, sizeof(buf), "T:%ld.%ld\r\n", int_part, dec_part);
-//		xQueueSend(xQueueUart, buf, portMAX_DELAY);
+		xQueueSend(xQueueUart, buf, portMAX_DELAY);
 		xQueueSend(xQueueOled, buf, portMAX_DELAY);
 
 		int_part = (data_struct.pres / 256) /100;
 		snprintf(buf, sizeof(buf), "P:%ld\r\n", int_part);
-//		xQueueSend(xQueueUart, buf, portMAX_DELAY);
+		xQueueSend(xQueueUart, buf, portMAX_DELAY);
 		xQueueSend(xQueueOled, buf, portMAX_DELAY);
 
 		int_part = data_struct.hum / 1000;
 		dec_part = (data_struct.hum % 1000) / 10;
 		snprintf(buf, sizeof(buf), "H:%ld.%ld\r\n", int_part, dec_part);
-//		xQueueSend(xQueueUart, buf, portMAX_DELAY);
+		xQueueSend(xQueueUart, buf, portMAX_DELAY);
 		xQueueSend(xQueueOled, buf, portMAX_DELAY);
 
 		vTaskDelay(pdMS_TO_TICKS(1000));
