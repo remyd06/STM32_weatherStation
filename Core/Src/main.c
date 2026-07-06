@@ -34,10 +34,14 @@
 #include "dma.h"
 #include "iwdg.h"
 #include "bme280.h"
-#include "temt6000.h"
 #include "ssd1306.h"
 #include "fonts.h"
-#include "ssd1306_conf.h"
+#include "bme280_task.h"
+#include "temt6000_task.h"
+#include "ssd1306_task.h"
+#include "globals.h"
+#include "FreeRTOS.h"
+#include "queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,12 +61,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -127,7 +125,7 @@ int main(void)
   /* USER CODE END 2 */
 
   /* Init scheduler */
-//  osKernelInitialize();
+  osKernelInitialize();
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -143,14 +141,18 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+  xQueueUart = xQueueCreate(8, MSG_SIZE);
+  xQueueOled = xQueueCreate(8, MSG_SIZE);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-//  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  xTaskCreate(BME280_Task, "bme280", 256, NULL, 2, NULL);
+  xTaskCreate(TEMT6000_Task, "temt6000", 256, NULL, 2, NULL);
+  xTaskCreate(SSD1306_Task, "ssd1306", 256, NULL, 2, NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -158,89 +160,17 @@ int main(void)
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
-//  osKernelStart();
+  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint8_t id;
-  uint8_t data[8];
-  BME280_calib_t calib;
-  BME280_data_t data_struct;
-
-
-  BME280_GetID(&id);
-//  char buf[32];
-//  int len = sprintf(buf, "ID: 0x%02X\r\n", id);
-//  USART_Transmit(USART2, (uint8_t *)buf, len);
-//  if (id == 0x60)
-//      USART_Transmit(USART2, (uint8_t *)"BME280 detected.\r\n", 18);
-//  else
-//      USART_Transmit(USART2, (uint8_t *)"BME280 NOT detected.\r\n", 22);
-  BME280_GetTRIM(&calib);
-  BME280_SetMODE(0b11, 0b001, 0b001, 0b001);
-
-  ssd1306_UpdateScreen();
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  ssd1306_Fill(Black);
-	  BME280_GetDATA(data);
-	  BME280_ConvertDATA(data, &calib, &data_struct);
-//
-//	  char bufT[16];
-//	  int lenT = sprintf(bufT, "T:%ld\r\n", data_struct.temp);
-//	  USART_Transmit(USART2, (uint8_t *)bufT, lenT);
-//
-//	  char bufP[16];
-//	  int lenP = sprintf(bufP, "P:%ld\r\n", data_struct.pres / 256);
-//	  USART_Transmit(USART2, (uint8_t *)bufP, lenP);
-//
-//	  char bufH[16];
-//	  int lenH = sprintf(bufH, "H:%ld\r\n", data_struct.hum / 1024);
-//	  USART_Transmit(USART2, (uint8_t *)bufH, lenH);
-//
-//	  char buf[16];
-//	  snprintf(buf, sizeof(buf), "LUX: %d\r\n", *get_DMA2_S0());
-//	  USART_Transmit(USART2, (uint8_t *)buf, strlen(buf));
-//	  HAL_Delay(500);
-
-	  char buf[32];
-
-	  // ===== TITRE =====
-	  char title[] = "Meteo Station";
-	  uint8_t x_title = (128 - (strlen(title) * 7)) / 2;
-
-	  ssd1306_SetCursor(x_title, 0);
-	  ssd1306_WriteString(title, Font_7x10, White);
-
-	  // ===== TEMP =====
-	  snprintf(buf, sizeof(buf), "T:%ld", data_struct.temp);
-	  ssd1306_SetCursor(0, 17);
-	  ssd1306_WriteString(buf, Font_7x10, White);
-
-	  // ===== PRESSION (droite) =====
-	  snprintf(buf, sizeof(buf), "P:%ld", data_struct.pres / 256);
-	  ssd1306_SetCursor(128 - (strlen(buf) * 7), 17);
-	  ssd1306_WriteString(buf, Font_7x10, White);
-
-	  // ===== HUMIDITE =====
-	  snprintf(buf, sizeof(buf), "H:%ld", data_struct.hum / 1024);
-	  ssd1306_SetCursor(0, 34);
-	  ssd1306_WriteString(buf, Font_7x10, White);
-
-	  // ===== LUMINOSITE =====
-	  snprintf(buf, sizeof(buf), "L:%d", *get_DMA2_S0());
-	  ssd1306_SetCursor(128 - (strlen(buf) * 7), 34);
-	  ssd1306_WriteString(buf, Font_7x10, White);
-
-	  // ===== UPDATE =====
-	  ssd1306_UpdateScreen();
-	  HAL_Delay(500);
-
   }
   /* USER CODE END 3 */
 }
