@@ -22,9 +22,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "rcc.h"
 #include "gpio.h"
 #include "usart.h"
@@ -34,14 +31,15 @@
 #include "dma.h"
 #include "iwdg.h"
 #include "bme280.h"
-#include "ssd1306.h"
 #include "fonts.h"
+#include "ssd1306.h"
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "globals.h"
 #include "bme280_task.h"
 #include "temt6000_task.h"
 #include "ssd1306_task.h"
-#include "globals.h"
-#include "FreeRTOS.h"
-#include "queue.h"
+#include "uart_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -150,9 +148,10 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  xTaskCreate(BME280_Task, "bme280", 256, NULL, 2, NULL);
-  xTaskCreate(TEMT6000_Task, "temt6000", 256, NULL, 2, NULL);
+  xTaskCreate(BME280_Task, "bme280", 256, NULL, 3, NULL);
+  xTaskCreate(TEMT6000_Task, "temt6000", 256, NULL, 3, NULL);
   xTaskCreate(SSD1306_Task, "ssd1306", 256, NULL, 2, NULL);
+  xTaskCreate(UART_Task, "uart", 256, NULL, 2, NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
