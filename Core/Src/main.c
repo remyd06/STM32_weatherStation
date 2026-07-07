@@ -40,6 +40,7 @@
 #include "temt6000_task.h"
 #include "ssd1306_task.h"
 #include "uart_task.h"
+#include "iwdg_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,7 +118,7 @@ int main(void)
   ADC1_Start();
   I2C1_Init();
   ssd1306_Init();
-//  IWDG_Init();
+  IWDG_Init();
 
 
   /* USER CODE END 2 */
@@ -152,6 +153,7 @@ int main(void)
   xTaskCreate(TEMT6000_Task, "temt6000", 256, NULL, 3, NULL);
   xTaskCreate(SSD1306_Task, "ssd1306", 256, NULL, 2, NULL);
   xTaskCreate(UART_Task, "uart", 256, NULL, 2, NULL);
+  xTaskCreate(IWDG_Task, "iwdg", 256, NULL, 4, NULL);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
