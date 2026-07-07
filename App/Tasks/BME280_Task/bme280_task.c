@@ -36,6 +36,8 @@ void	BME280_Task()
 		xQueueSend(xQueueUart, buf, portMAX_DELAY);
 		xQueueSend(xQueueOled, buf, portMAX_DELAY);
 
+		BME280_task_alive = 1;
+
 		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 }

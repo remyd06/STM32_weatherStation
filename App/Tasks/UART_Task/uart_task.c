@@ -9,5 +9,7 @@ void	UART_Task()
 		xQueueReceive(xQueueUart, buf, portMAX_DELAY);
 
 		USART_Transmit(USART2, (uint8_t *)buf, strlen(buf));
+
+		UART_task_alive = 1;
 	}
 }

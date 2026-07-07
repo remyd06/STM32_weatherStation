@@ -3,6 +3,7 @@
 
 # include "globals.h"
 # include "dma.h"
+# include "iwdg_task.h"
 
 void	TEMT6000_Task();
 

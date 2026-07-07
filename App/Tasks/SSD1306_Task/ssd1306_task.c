@@ -46,5 +46,7 @@ void SSD1306_Task()
 		}
 
 		ssd1306_UpdateScreen();
+
+		SSD1306_task_alive = 1;
 	}
 }

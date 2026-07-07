@@ -3,6 +3,7 @@
 
 # include "globals.h"
 # include "ssd1306.h"
+# include "iwdg_task.h"
 
 void	SSD1306_Task();
 
