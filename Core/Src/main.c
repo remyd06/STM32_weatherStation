@@ -22,25 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "rcc.h"
-#include "gpio.h"
-#include "usart.h"
-#include "spi.h"
-#include "i2c.h"
-#include "adc.h"
-#include "dma.h"
-#include "iwdg.h"
-#include "bme280.h"
-#include "fonts.h"
-#include "ssd1306.h"
-#include "FreeRTOS.h"
-#include "queue.h"
-#include "globals.h"
-#include "bme280_task.h"
-#include "temt6000_task.h"
-#include "ssd1306_task.h"
-#include "uart_task.h"
-#include "iwdg_task.h"
+#include "globals.h" /**< Shared handles, queues and global config for the weather station */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -80,13 +62,17 @@ void StartDefaultTask(void *argument);
 
 /**
   * @brief  The application entry point.
-  * @retval int
+  * @details Brings up the system clock and core peripherals (RCC, GPIO, UART,
+  *          SPI, ADC/DMA, I2C, IWDG, OLED), creates the FreeRTOS queues used
+  *          to move sensor readings between tasks, spawns the sensor/display/
+  *          UART/watchdog tasks, and finally starts the scheduler.
+  * @retval int Never returns; control is handed off to the FreeRTOS scheduler.
   */
 int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	DBGMCU->CR &= ~DBGMCU_CR_TRACE_IOEN;
+	DBGMCU->CR &= ~DBGMCU_CR_TRACE_IOEN; /**< Disable debug trace pins so they can be reused as GPIO */
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -108,17 +94,17 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  RCC_Init();
-  GPIO_Init();
-  USART2_Init();
-  SPI1_Init();
-  ADC_Prescaller_Init();
-  ADC1_Init();
-  DMA2_Init();
-  ADC1_Start();
-  I2C1_Init();
-  ssd1306_Init();
-  IWDG_Init();
+  RCC_Init();             /**< Enable clocks for peripherals used by the station */
+  GPIO_Init();            /**< Configure GPIO pins (sensor CS/EN lines, status LEDs, etc.) */
+  USART2_Init();          /**< UART link to the PC-side data pipeline */
+  SPI1_Init();            /**< SPI bus for BME280 and/or SSD1306, depending on wiring */
+  ADC_Prescaller_Init();  /**< Configure ADC clock prescaler */
+  ADC1_Init();            /**< ADC1 setup for the TEMT6000 lux sensor */
+  DMA2_Init();            /**< DMA2 channel backing the ADC1 conversions */
+  ADC1_Start();           /**< Start continuous ADC1 conversion via DMA */
+  I2C1_Init();            /**< I2C bus for BME280 and SSD1306 */
+  IWDG_Init();            /**< Arm the hardware independent watchdog */
+  ssd1306_Init();         /**< Bring up the OLED display driver */
 
 
   /* USER CODE END 2 */
@@ -140,8 +126,8 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
-  xQueueUart = xQueueCreate(8, MSG_SIZE);
-  xQueueOled = xQueueCreate(8, MSG_SIZE);
+  xQueueUart = xQueueCreate(8, MSG_SIZE); /**< Queue carrying formatted sensor messages to UART_Task */
+  xQueueOled = xQueueCreate(8, MSG_SIZE); /**< Queue carrying formatted sensor messages to SSD1306_Task */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -149,11 +135,11 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  xTaskCreate(BME280_Task, "bme280", 256, NULL, 3, NULL);
-  xTaskCreate(TEMT6000_Task, "temt6000", 256, NULL, 3, NULL);
-  xTaskCreate(SSD1306_Task, "ssd1306", 256, NULL, 2, NULL);
-  xTaskCreate(UART_Task, "uart", 256, NULL, 2, NULL);
-  xTaskCreate(IWDG_Task, "iwdg", 256, NULL, 4, NULL);
+  xTaskCreate(BME280_Task, "bme280", 256, NULL, 3, NULL);     /**< Reads temperature/humidity/pressure, posts to both queues */
+  xTaskCreate(TEMT6000_Task, "temt6000", 256, NULL, 3, NULL); /**< Reads ambient lux via ADC1/DMA, posts to both queues */
+  xTaskCreate(SSD1306_Task, "ssd1306", 256, NULL, 2, NULL);   /**< Consumes xQueueOled and refreshes the OLED display */
+  xTaskCreate(UART_Task, "uart", 256, NULL, 2, NULL);         /**< Consumes xQueueUart and streams data to the PC pipeline */
+  xTaskCreate(IWDG_Task, "iwdg", 256, NULL, 4, NULL);         /**< Software watchdog layer; periodically kicks the IWDG */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
