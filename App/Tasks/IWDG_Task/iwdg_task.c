@@ -1,5 +1,22 @@
+/**
+ * @file    iwdg_task.c
+ * @brief   Software watchdog layer: monitors the other FreeRTOS tasks'
+ *          liveness flags and only kicks the hardware IWDG when all of
+ *          them have reported alive within TASK_TIMEOUT_MS.
+ */
+
 #include "iwdg_task.h"
 
+/**
+ * @brief Task entry point: every 100ms, checks each sensor/display/UART task
+ *        for a timeout, logs a warning over UART if one is stuck, and kicks
+ *        the IWDG once all four tasks have checked in during the current
+ *        window (then clears the flags for the next window).
+ * @note  Detects task freeze/starvation only, not invalid sensor data; the
+ *        latter needs separate range checks or stuck-value detection.
+ * @note  Runs at the highest task priority so a peripheral task blocked on
+ *        I2C/SPI cannot starve the watchdog check.
+ */
 void	IWDG_Task()
 {
 	volatile uint32_t	last_time_seen_bme280 = xTaskGetTickCount();
@@ -31,7 +48,7 @@ void	IWDG_Task()
 
 		if (BME280_task_alive && TEMT6000_task_alive && SSD1306_task_alive && UART_task_alive)
 		{
-			IWDG->KR = 0xAAAA;
+			IWDG->KR = 0xAAAA; /* refresh: reload the IWDG counter */
 			BME280_task_alive = 0;
 			TEMT6000_task_alive = 0;
 			SSD1306_task_alive = 0;

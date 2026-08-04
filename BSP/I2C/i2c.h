@@ -1,6 +1,11 @@
 #ifndef I2C_H
 #define I2C_H
 
+/**
+ * @file    i2c.h
+ * @brief   I2C1 master driver (SSD1306 communication).
+ */
+
 # include "stm32f446xx.h"
 
 # define SSD1306_ADDR 0x3C

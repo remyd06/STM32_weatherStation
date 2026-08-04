@@ -1,5 +1,14 @@
+/**
+ * @file    uart_task.c
+ * @brief   FreeRTOS task forwarding queued sensor strings to USART2.
+ */
+
 #include "uart_task.h"
 
+/**
+ * @brief Task entry point: blocks on xQueueUart, then transmits whatever
+ *        string BME280_Task/TEMT6000_Task posted, unmodified, over USART2.
+ */
 void	UART_Task()
 {
 	char	buf[MSG_SIZE];

@@ -1,21 +1,39 @@
+/**
+ * @file    bme280.c
+ * @brief   BME280 driver over SPI1 (temperature, pressure, humidity).
+ * @note    The integer compensation formulas (BME280_compensate_*) are
+ *          Bosch's reference implementation from the BME280 datasheet,
+ *          used as provided.
+ */
+
 #include "bme280.h"
 
+/** @brief Running fine-resolution temperature, shared between the three compensation functions (set by T, read by P and H). */
 BME280_S32_t	t_fine;
 
+/**
+ * @brief Assert the BME280 chip-select (SPI transaction start).
+ */
 void	CS_SPI1_BME280_LOW()
 {
-	GPIOC->BSRR = (0b1 << 20);
+	GPIOC->BSRR = (0b1 << 20); /* BR4: reset PC4 -> CS low */
 }
 
+/**
+ * @brief Release the BME280 chip-select (SPI transaction end).
+ */
 void	CS_SPI1_BME280_HIGH()
 {
-	GPIOC->BSRR = (0b1 << 4);
+	GPIOC->BSRR = (0b1 << 4); /* BS4: set PC4 -> CS high */
 }
 
-
+/**
+ * @brief Read the BME280 chip ID register (expected value: 0x60).
+ * @param id Output: chip ID byte read from the sensor.
+ */
 void	BME280_GetID(uint8_t *id)
 {
-	uint8_t addr = 0xD0 | 0x80;
+	uint8_t addr = 0xD0 | 0x80; /* reg 0xD0 (id), MSB set = SPI read */
 
 	CS_SPI1_BME280_LOW();
 
@@ -28,9 +46,18 @@ void	BME280_GetID(uint8_t *id)
 	CS_SPI1_BME280_HIGH();
 }
 
+/**
+ * @brief Configure the sensor's power mode and oversampling for humidity,
+ *        pressure and temperature (ctrl_hum and ctrl_meas registers).
+ * @param mode   Power mode (sleep/forced/normal).
+ * @param osrs_p Pressure oversampling.
+ * @param osrs_t Temperature oversampling.
+ * @param osrs_h Humidity oversampling.
+ * @note  ctrl_hum only takes effect after ctrl_meas is written, per datasheet.
+ */
 void	BME280_SetMODE(uint8_t mode, uint8_t osrs_p, uint8_t osrs_t, uint8_t osrs_h)
 {
-	uint8_t	addr_ctrl_hum = 0x72;
+	uint8_t	addr_ctrl_hum = 0x72;  /* write address of ctrl_hum (0xF2 & 0x7F) */
 
 	CS_SPI1_BME280_LOW();
 
@@ -42,7 +69,7 @@ void	BME280_SetMODE(uint8_t mode, uint8_t osrs_p, uint8_t osrs_t, uint8_t osrs_h
 
 	CS_SPI1_BME280_HIGH();
 
-	uint8_t	addr_ctrl_meas = 0x74;
+	uint8_t	addr_ctrl_meas = 0x74; /* write address of ctrl_meas (0xF4 & 0x7F) */
 	uint8_t	config_ctrl_meas = (osrs_t << 5) | (osrs_p << 2) | mode;
 
 	CS_SPI1_BME280_LOW();
@@ -56,6 +83,12 @@ void	BME280_SetMODE(uint8_t mode, uint8_t osrs_p, uint8_t osrs_t, uint8_t osrs_h
 	CS_SPI1_BME280_HIGH();
 }
 
+/**
+ * @brief Read the factory calibration/trim registers (0x88-0xA1 for T/P/H1,
+ *        0xE1-0xE7 for H2-H6) into a BME280_calib_t.
+ * @param calib Output: calibration parameters used by the compensation functions.
+ * @note  Must be called once at startup, before BME280_ConvertDATA().
+ */
 void	BME280_GetTRIM(BME280_calib_t *calib)
 {
 	uint8_t 		lsb;
@@ -150,7 +183,7 @@ void	BME280_GetTRIM(BME280_calib_t *calib)
 	msb = (SPI_Receive(SPI1));
 	calib->dig_P9 = (msb << 8) | lsb;
 
-	SPI_Transmit(SPI1, &(uint8_t){0x00});
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); /* skip reserved byte 0xA0 */
 	SPI_Receive(SPI1);
 
 	//	dig_H1
@@ -198,36 +231,50 @@ void	BME280_GetTRIM(BME280_calib_t *calib)
 	CS_SPI1_BME280_HIGH();
 }
 
+/**
+ * @brief Read the 8 raw ADC bytes (pressure, temperature, humidity) starting
+ *        at register 0xF7.
+ * @param data Output: raw bytes in [temp_msb, temp_lsb, temp_xlsb,
+ *             pres_msb, pres_lsb, pres_xlsb, hum_msb, hum_lsb] order,
+ *             matching BME280_ConvertDATA()'s expected layout.
+ */
 void	BME280_GetDATA(uint8_t *data)
 {
 
 	CS_SPI1_BME280_LOW();
 
-	SPI_Transmit(SPI1, &(uint8_t){0xF7});		//wake
+	SPI_Transmit(SPI1, &(uint8_t){0xF7}); //wake
 	SPI_Receive(SPI1);
 
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//pres msb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //pres msb
 	data[3] = SPI_Receive(SPI1);
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//pres lsb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //pres lsb
 	data[4] = SPI_Receive(SPI1);
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//pres xlsb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //pres xlsb
 	data[5] = SPI_Receive(SPI1);
 
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//temp msb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //temp msb
 	data[0] = SPI_Receive(SPI1);
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//temp lsb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //temp lsb
 	data[1] = SPI_Receive(SPI1);
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//temp xlsb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //temp xlsb
 	data[2] = SPI_Receive(SPI1);
 
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//hum msb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //hum msb
 	data[6] = SPI_Receive(SPI1);
-	SPI_Transmit(SPI1, &(uint8_t){0x00});		//hum lsb
+	SPI_Transmit(SPI1, &(uint8_t){0x00}); //hum lsb
 	data[7] = SPI_Receive(SPI1);
 
 	CS_SPI1_BME280_HIGH();
 }
 
+/**
+ * @brief Bosch reference compensation formula (integer, fixed-point).
+ * @param adc_T Raw 20-bit temperature ADC value.
+ * @param calib Calibration parameters from BME280_GetTRIM().
+ * @return      Temperature in DegC, resolution 0.01 DegC (e.g. 5123 = 51.23 DegC).
+ * @note        Also updates the shared t_fine used by the P and H compensation.
+ */
 BME280_S32_t BME280_compensate_T_int32(BME280_S32_t adc_T, BME280_calib_t *calib)
 {
     BME280_S32_t var1, var2, T;
@@ -243,6 +290,15 @@ BME280_S32_t BME280_compensate_T_int32(BME280_S32_t adc_T, BME280_calib_t *calib
     return T;
 }
 
+/**
+ * @brief Bosch reference compensation formula (integer, Q24.8 fixed-point).
+ * @param adc_P Raw 20-bit pressure ADC value.
+ * @param calib Calibration parameters from BME280_GetTRIM().
+ * @return      Pressure in Pa as Q24.8 (divide by 256 for Pa), or 0 if the
+ *              computation is undefined (division by zero guarded below).
+ * @note        Requires BME280_compensate_T_int32() to have been called first
+ *              (uses the shared t_fine).
+ */
 BME280_U32_t BME280_compensate_P_int64(BME280_S32_t adc_P, BME280_calib_t *calib)
 {
     BME280_S64_t var1, var2, p;
@@ -267,6 +323,15 @@ BME280_U32_t BME280_compensate_P_int64(BME280_S32_t adc_P, BME280_calib_t *calib
     return (BME280_U32_t)p;
 }
 
+/**
+ * @brief Bosch reference compensation formula (integer, Q22.10 fixed-point).
+ * @param adc_H Raw 16-bit humidity ADC value.
+ * @param calib Calibration parameters from BME280_GetTRIM().
+ * @return      Relative humidity as Q22.10 (divide by 1024 for %RH), clamped
+ *              to the sensor's valid range [0, 100] %RH.
+ * @note        Requires BME280_compensate_T_int32() to have been called first
+ *              (uses the shared t_fine).
+ */
 BME280_U32_t BME280_compensate_H_int32(BME280_S32_t adc_H, BME280_calib_t *calib)
 {
     BME280_S32_t v_x1_u32r;
@@ -291,6 +356,13 @@ BME280_U32_t BME280_compensate_H_int32(BME280_S32_t adc_H, BME280_calib_t *calib
     return (BME280_U32_t)(v_x1_u32r >> 12);
 }
 
+/**
+ * @brief Assemble the 20-bit raw ADC values from BME280_GetDATA()'s byte
+ *        buffer and run them through the Bosch compensation formulas.
+ * @param data        Raw bytes from BME280_GetDATA().
+ * @param calib       Calibration parameters from BME280_GetTRIM().
+ * @param data_struct Output: compensated temperature/pressure/humidity.
+ */
 void	BME280_ConvertDATA(uint8_t *data, BME280_calib_t *calib, BME280_data_t *data_struct)
 {
 	BME280_S32_t	tempT = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4);
@@ -301,4 +373,3 @@ void	BME280_ConvertDATA(uint8_t *data, BME280_calib_t *calib, BME280_data_t *dat
 	data_struct->pres = BME280_compensate_P_int64(tempP, calib);
 	data_struct->hum = BME280_compensate_H_int32(tempH, calib);
 }
-

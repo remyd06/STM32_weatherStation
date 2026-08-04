@@ -1,3 +1,8 @@
+/**
+ * @file    globals.c
+ * @brief   Definitions for the globals declared in globals.h.
+ */
+
 #include "globals.h"
 #include "main.h"
 

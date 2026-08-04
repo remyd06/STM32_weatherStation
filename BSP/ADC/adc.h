@@ -1,6 +1,10 @@
 #ifndef ADC_H
 #define ADC_H
 
+/**
+ * @file    adc.h
+ * @brief   ADC1 driver for the TEMT6000 ambient light sensor (channel 9, PB1).
+ */
 
 # include "stm32f446xx.h"
 

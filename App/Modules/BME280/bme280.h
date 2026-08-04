@@ -1,6 +1,14 @@
 #ifndef BME280_H
 #define BME280_H
 
+/**
+ * @file    bme280.h
+ * @brief   BME280 driver over SPI1 (temperature, pressure, humidity).
+ * @note    The integer compensation formulas (BME280_compensate_*) are
+ *          Bosch's reference implementation from the BME280 datasheet,
+ *          used as provided.
+ */
+
 # include "gpio.h"
 # include "spi.h"
 
@@ -8,6 +16,7 @@
 # define BME280_U32_t	uint32_t
 # define BME280_S64_t	int64_t
 
+/** @brief Compensated sensor readings (temperature x100 DegC, pressure/humidity Q-format, see BME280_ConvertDATA). */
 typedef struct
 {
 	BME280_S32_t	temp;
@@ -15,6 +24,7 @@ typedef struct
 	BME280_U32_t	hum;
 } BME280_data_t;
 
+/** @brief Factory calibration/trim parameters, read once via BME280_GetTRIM(). */
 typedef struct {
     uint16_t dig_T1;
     int16_t  dig_T2;

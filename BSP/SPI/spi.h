@@ -1,6 +1,11 @@
 #ifndef SPI_H
 #define SPI_H
 
+/**
+ * @file    spi.h
+ * @brief   SPI1 master driver (BME280 communication).
+ */
+
 # include <stdint.h>
 # include "stm32f446xx.h"
 # include "gpio.h"
