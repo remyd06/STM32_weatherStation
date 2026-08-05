@@ -6,6 +6,9 @@ Reads temperature, humidity, pressure and ambient light, displays them on an OLE
 
 ---
 
+## Example
+<img width="1625" height="798" alt="da693816-e283-4493-940b-283856d8744b" src="https://github.com/user-attachments/assets/0aee94b3-6b13-4652-8cf8-d7ee34c14e5f" />
+
 ## What it does
 
 | Feature | Description |
